@@ -73,7 +73,10 @@ class PyOpenFecApiClass(object):
                         cls.wait_time))
                 time.sleep(cls.wait_time)
                 response = requests.get(url, params=params)
-                cls.ratelimit_remaining = int(response.headers['x-ratelimit-remaining'])
+                if 'x-ratelimit-remaining' in response.headers:
+                    cls.ratelimit_remaining = int(response.headers['x-ratelimit-remaining'])
+                else:
+                    cls.ratelimit_remaining = 0
 
         cls.wait_time = 0.5
         return response
