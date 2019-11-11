@@ -2,7 +2,6 @@ from . import utils
 
 
 class Report(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.aggregate_amount_personal_contributions_general = None
         self.aggregate_contributions_personal_funds_primary = None
@@ -188,28 +187,21 @@ class Report(utils.PyOpenFecApiPaginatedClass):
         self.transfers_to_other_authorized_committee_ytd = None
 
         date_fields = {
-            'coverage_end_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            'coverage_start_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            'receipt_date': '%Y-%m-%dT%H:%M:%S',
-            }
+            "coverage_end_date": "%Y-%m-%dT%H:%M:%S+00:00",
+            "coverage_start_date": "%Y-%m-%dT%H:%M:%S+00:00",
+            "receipt_date": "%Y-%m-%dT%H:%M:%S",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
-    def __unicode__(self):
-        return unicode("{cid} {rtf} ({c} cycle, {csd}-{ced})".format(
-            cid=self.committee_id,
-            rtf=self.report_type_full,
-            c=self.cycle,
-            csd=self.coverage_start_date,
-            ced=self.coverage_end_date
-        ))
-
     def __str__(self):
-        return repr("{cid} {rtf} ({c} cycle, {csd}-{ced})".format(
-            cid=self.committee_id,
-            rtf=self.report_type_full,
-            c=self.cycle,
-            csd=self.coverage_start_date,
-            ced=self.coverage_end_date
-        ))
+        return repr(
+            "{cid} {rtf} ({c} cycle, {csd}-{ced})".format(
+                cid=self.committee_id,
+                rtf=self.report_type_full,
+                c=self.cycle,
+                csd=self.coverage_start_date,
+                ced=self.coverage_end_date,
+            )
+        )

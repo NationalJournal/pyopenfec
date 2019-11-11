@@ -6,7 +6,6 @@ from .aggregates import AggregateScheduleEByCandidate
 
 
 class Candidate(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
-
     def __init__(self, **kwargs):
         self.active_through = None
         self.address_city = None
@@ -41,28 +40,23 @@ class Candidate(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
         self._committees = None
 
         date_fields = {
-            'first_file_date': '%Y-%m-%d',
-            'last_f2_date': '%Y-%m-%d',
-            'last_file_date': '%Y-%m-%d',
-            'load_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            }
+            "first_file_date": "%Y-%m-%d",
+            "last_f2_date": "%Y-%m-%d",
+            "last_file_date": "%Y-%m-%d",
+            "load_date": "%Y-%m-%dT%H:%M:%S+00:00",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
-    def __unicode__(self):
-        return unicode("{name} {id}".format(name=self.name,
-                                            id=self.candidate_id))
-
     def __str__(self):
-        return repr("{name} {id}".format(name=self.name,
-                                         id=self.candidate_id))
+        return repr("{name} {id}".format(name=self.name, id=self.candidate_id))
 
     @property
     def history(self):
         if self._history is None:
             self._history = {}
-            resource_path = 'candidate/{cid}/history'.format(cid=self.candidate_id)
+            resource_path = "candidate/{cid}/history".format(cid=self.candidate_id)
             for hp in CandidateHistoryPeriod.fetch(resource=resource_path):
                 self._history[hp.two_year_period] = hp
         return self._history
@@ -84,19 +78,17 @@ class Candidate(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
     @utils.default_empty_list
     def aggregated_independent_expenditures(self, **kwargs):
         independent_expenditures = AggregateScheduleEByCandidate.fetch(
-            candidate_id=self.candidate_id, **kwargs)
+            candidate_id=self.candidate_id, **kwargs
+        )
         return [f for f in independent_expenditures]
 
     def principal_committee(self, cycle):
         return Committee.fetch_one(
-            candidate_id=self.candidate_id,
-            cycle=cycle,
-            designation='P',
-            )
+            candidate_id=self.candidate_id, cycle=cycle, designation="P"
+        )
 
 
 class CandidateHistoryPeriod(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.active_through = None
         self.address_city = None
@@ -129,23 +121,18 @@ class CandidateHistoryPeriod(utils.PyOpenFecApiPaginatedClass):
         self.two_year_period = None
 
         date_fields = {
-            'first_file_date': '%Y-%m-%d',
-            'last_f2_date': '%Y-%m-%d',
-            'last_file_date': '%Y-%m-%d',
-            'load_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            }
+            "first_file_date": "%Y-%m-%d",
+            "last_f2_date": "%Y-%m-%d",
+            "last_file_date": "%Y-%m-%d",
+            "load_date": "%Y-%m-%dT%H:%M:%S+00:00",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
-    def __unicode__(self):
-        return unicode("{name} [{cand_id}] ({period})".format(
-            name=self.name,
-            cand_id=self.candidate_id,
-            period=self.two_year_period))
-
     def __str__(self):
-        return repr("{name} [{cand_id}] ({period})".format(
-            name=self.name,
-            cand_id=self.candidate_id,
-            period=self.two_year_period))
+        return repr(
+            "{name} [{cand_id}] ({period})".format(
+                name=self.name, cand_id=self.candidate_id, period=self.two_year_period
+            )
+        )

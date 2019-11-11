@@ -2,7 +2,6 @@ from . import utils
 
 
 class ScheduleATransaction(utils.PyOpenFecApiIndexedClass):
-
     def __init__(self, **kwargs):
         self.amendment_indicator = None
         self.amendment_indicator_desc = None
@@ -86,41 +85,34 @@ class ScheduleATransaction(utils.PyOpenFecApiIndexedClass):
         self.unused_contbr_id = None
 
         date_fields = {
-            'contribution_receipt_date': '%Y-%m-%dT%H:%M:%S',
-            'load_date': '%Y-%m-%dT%H:%M:%S.%f+00:00',
-            'timestamp': '%Y-%m-%dT%H:%M:%S.%f+00:00',
-            }
+            "contribution_receipt_date": "%Y-%m-%dT%H:%M:%S",
+            "load_date": "%Y-%m-%dT%H:%M:%S.%f+00:00",
+            "timestamp": "%Y-%m-%dT%H:%M:%S.%f+00:00",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_a'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_a"
 
         for record in super(ScheduleATransaction, cls).fetch(**kwargs):
             yield record
 
-    def __unicode__(self):
-        return unicode("{cid} receipt: {fn} ({t}, {d})".format(
-            cid=self.committee_id,
-            fn=self.file_number,
-            t=self.tran_id,
-            d=self.receipt_date
-        ))
-
     def __str__(self):
-        return repr("{cid} receipt: {fn} ({t}, {d})".format(
-            cid=self.committee_id,
-            fn=self.file_number,
-            t=self.tran_id,
-            d=self.receipt_date
-        ))
+        return repr(
+            "{cid} receipt: {fn} ({t}, {d})".format(
+                cid=self.committee_id,
+                fn=self.file_number,
+                t=self.tran_id,
+                d=self.receipt_date,
+            )
+        )
 
 
 class ScheduleBTransaction(utils.PyOpenFecApiIndexedClass):
-
     def __init__(self, **kwargs):
         self.amendment_indicator = None
         self.amendment_indicator_desc = None
@@ -204,33 +196,27 @@ class ScheduleBTransaction(utils.PyOpenFecApiIndexedClass):
         self.unused_contbr_id = None
 
         date_fields = {
-            'disbursement_date': '%Y-%m-%dT%H:%M:%S',
-            'load_date': '%Y-%m-%dT%H:%M:%S.%f+00:00',
-            }
+            "disbursement_date": "%Y-%m-%dT%H:%M:%S",
+            "load_date": "%Y-%m-%dT%H:%M:%S.%f+00:00",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_b'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_b"
 
         for record in super(ScheduleBTransaction, cls).fetch(**kwargs):
             yield record
 
-    def __unicode__(self):
-        return unicode("{cid} receipt: {fn} ({t}, {d})".format(
-            cid=self.committee_id,
-            fn=self.file_number,
-            t=self.tran_id,
-            d=self.disbursement_date
-        ))
-
     def __str__(self):
-        return repr("{cid} receipt: {fn} ({t}, {d})".format(
-            cid=self.committee_id,
-            fn=self.file_number,
-            t=self.tran_id,
-            d=self.disbursement_date
-        ))
+        return repr(
+            "{cid} receipt: {fn} ({t}, {d})".format(
+                cid=self.committee_id,
+                fn=self.file_number,
+                t=self.tran_id,
+                d=self.disbursement_date,
+            )
+        )

@@ -2,7 +2,6 @@ from . import utils
 
 
 class CommitteeTotals(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.all_loans_received = None
         self.all_other_loans = None
@@ -91,32 +90,25 @@ class CommitteeTotals(utils.PyOpenFecApiPaginatedClass):
         self.transfers_to_other_authorized_committee = None
 
         date_fields = {
-            'coverage_start_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            'coverage_end_date': '%Y-%m-%dT%H:%M:%S+00:00',
-            }
+            "coverage_start_date": "%Y-%m-%dT%H:%M:%S+00:00",
+            "coverage_end_date": "%Y-%m-%dT%H:%M:%S+00:00",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
-    def __unicode__(self):
-        return unicode("{cid} totals ({c} cycle, {csd}-{ced})".format(
-            cid=self.committee_id,
-            c=self.cycle,
-            csd=self.coverage_start_date,
-            ced=self.coverage_end_date
-        ))
-
     def __str__(self):
-        return repr("{cid} totals ({c} cycle, {csd}-{ced})".format(
-            cid=self.committee_id,
-            c=self.cycle,
-            csd=self.coverage_start_date,
-            ced=self.coverage_end_date
-        ))
+        return repr(
+            "{cid} totals ({c} cycle, {csd}-{ced})".format(
+                cid=self.committee_id,
+                c=self.cycle,
+                csd=self.coverage_start_date,
+                ced=self.coverage_end_date,
+            )
+        )
 
 
 class AggregateScheduleAByContributor(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.committee_id = None
         self.contributor_id = None
@@ -131,15 +123,14 @@ class AggregateScheduleAByContributor(utils.PyOpenFecApiPaginatedClass):
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_a/by_contributor'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_a/by_contributor"
 
         for record in super(AggregateScheduleAByContributor, cls).fetch(**kwargs):
             yield record
 
 
 class AggregateScheduleABySize(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.committee_id = None
         self.count = None
@@ -152,15 +143,14 @@ class AggregateScheduleABySize(utils.PyOpenFecApiPaginatedClass):
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_a/by_size'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_a/by_size"
 
         for record in super(AggregateScheduleABySize, cls).fetch(**kwargs):
             yield record
 
 
 class AggregateScheduleAByState(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.committee_id = None
         self.count = None
@@ -173,15 +163,14 @@ class AggregateScheduleAByState(utils.PyOpenFecApiPaginatedClass):
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_a/by_state'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_a/by_state"
 
         for record in super(AggregateScheduleAByState, cls).fetch(**kwargs):
             yield record
 
 
 class AggregateScheduleAByZip(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.committee_id = None
         self.count = None
@@ -194,15 +183,14 @@ class AggregateScheduleAByZip(utils.PyOpenFecApiPaginatedClass):
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_a/by_zip'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_a/by_zip"
 
         for record in super(AggregateScheduleAByZip, cls).fetch(**kwargs):
             yield record
 
 
 class AggregateScheduleEByCandidate(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.candidate_id = None
         self.candidate_name = None
@@ -218,8 +206,8 @@ class AggregateScheduleEByCandidate(utils.PyOpenFecApiPaginatedClass):
 
     @classmethod
     def fetch(cls, **kwargs):
-        if 'resource' not in kwargs:
-            kwargs['resource'] = 'schedules/schedule_e/by_candidate'
+        if "resource" not in kwargs:
+            kwargs["resource"] = "schedules/schedule_e/by_candidate"
 
         for record in super(AggregateScheduleEByCandidate, cls).fetch(**kwargs):
             yield record
