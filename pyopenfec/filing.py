@@ -3,7 +3,6 @@ from .transaction import ScheduleATransaction, ScheduleBTransaction
 
 
 class Filing(utils.PyOpenFecApiPaginatedClass):
-
     def __init__(self, **kwargs):
         self.amendment_chain = None
         self.amendment_indicator = None
@@ -62,49 +61,61 @@ class Filing(utils.PyOpenFecApiPaginatedClass):
         self.update_date = None
 
         date_fields = {
-            'coverage_end_date': '%Y-%m-%dT%H:%M:%S',
-            'coverage_start_date': '%Y-%m-%dT%H:%M:%S',
-            'receipt_date': '%Y-%m-%dT%H:%M:%S',
-            'update_date': '%Y-%m-%dT%H:%M:%S',
-            }
+            "coverage_end_date": "%Y-%m-%dT%H:%M:%S",
+            "coverage_start_date": "%Y-%m-%dT%H:%M:%S",
+            "receipt_date": "%Y-%m-%dT%H:%M:%S",
+            "update_date": "%Y-%m-%dT%H:%M:%S",
+        }
 
         for k, v in kwargs.items():
             utils.set_instance_attr(self, k, v, date_fields)
 
-    def __unicode__(self):
-        return unicode("{cid}'s #{fn} Form {ft} ({rtf})".format(fn=self.file_number,
-                                                                cid=self.committee_id,
-                                                                ft=self.form_type,
-                                                                rtf=self.report_type_full))
-
     def __str__(self):
-        return "{cid}'s #{fn} Form {ft} ({rtf})".format(fn=self.file_number,
-                                                        cid=self.committee_id,
-                                                        ft=self.form_type,
-                                                        rtf=self.report_type_full)
+        return "{cid}'s #{fn} Form {ft} ({rtf})".format(
+            fn=self.file_number,
+            cid=self.committee_id,
+            ft=self.form_type,
+            rtf=self.report_type_full,
+        )
 
     @utils.default_empty_list
     def select_receipts(self, **kwargs):
-        return [t for t in ScheduleATransaction.fetch(
-            min_image_number=self.beginning_image_number,
-            max_image_number=self.ending_image_number,
-            **kwargs)]
+        return [
+            t
+            for t in ScheduleATransaction.fetch(
+                min_image_number=self.beginning_image_number,
+                max_image_number=self.ending_image_number,
+                **kwargs
+            )
+        ]
 
     @utils.default_empty_list
     def all_receipts(self):
-        return [t for t in ScheduleATransaction.fetch(
-            min_image_number=self.beginning_image_number,
-            max_image_number=self.ending_image_number)]
+        return [
+            t
+            for t in ScheduleATransaction.fetch(
+                min_image_number=self.beginning_image_number,
+                max_image_number=self.ending_image_number,
+            )
+        ]
 
     @utils.default_empty_list
     def select_disbursements(self, **kwargs):
-        return [t for t in ScheduleBTransaction.fetch(
-            min_image_number=self.beginning_image_number,
-            max_image_number=self.ending_image_number,
-            **kwargs)]
+        return [
+            t
+            for t in ScheduleBTransaction.fetch(
+                min_image_number=self.beginning_image_number,
+                max_image_number=self.ending_image_number,
+                **kwargs
+            )
+        ]
 
     @utils.default_empty_list
     def all_disbursements(self):
-        return [r for r in ScheduleBTransaction.fetch(
-            min_image_number=self.beginning_image_number,
-            max_image_number=self.ending_image_number)]
+        return [
+            r
+            for r in ScheduleBTransaction.fetch(
+                min_image_number=self.beginning_image_number,
+                max_image_number=self.ending_image_number,
+            )
+        ]
