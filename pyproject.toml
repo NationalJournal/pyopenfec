@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pyopenfec"
+version = "0.2.1"
+description = "OpenFEC API Client"
+authors = [
+  "Jeremy Bowers",
+  "Bob Lannon",
+  "Kevin Schaul",
+  "Janak Mayer",
+  "Evan Sonderegger",
+  "Robert Townley <me@roberttownley.com>",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
