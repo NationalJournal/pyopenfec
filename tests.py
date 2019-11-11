@@ -68,7 +68,6 @@ class CommitteeTest(unittest.TestCase):
             example = donation
         self.assertIsInstance(example.contribution_receipt_date, datetime)
         self.assertIsInstance(example.load_date, datetime)
-        self.assertIsInstance(example.timestamp, datetime)
 
     def test_schedule_b_dates(self):
         example = None

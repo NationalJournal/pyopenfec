@@ -44,7 +44,7 @@ class Candidate(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
             'first_file_date': '%Y-%m-%d',
             'last_f2_date': '%Y-%m-%d',
             'last_file_date': '%Y-%m-%d',
-            'load_date': '%Y-%m-%dT%H:%M:%S',
+            'load_date': '%Y-%m-%dT%H:%M:%S+00:00',
             }
 
         for k, v in kwargs.items():
@@ -132,7 +132,7 @@ class CandidateHistoryPeriod(utils.PyOpenFecApiPaginatedClass):
             'first_file_date': '%Y-%m-%d',
             'last_f2_date': '%Y-%m-%d',
             'last_file_date': '%Y-%m-%d',
-            'load_date': '%Y-%m-%dT%H:%M:%S',
+            'load_date': '%Y-%m-%dT%H:%M:%S+00:00',
             }
 
         for k, v in kwargs.items():
