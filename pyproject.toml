@@ -1,14 +1,28 @@
 [tool.poetry]
 name = "pyopenfec"
-version = "0.2.1"
+version = "0.2.2"
 description = "OpenFEC API Client"
+
+license = "MIT"
+readme = "README.md"
+
+homepage = "https://github.com/roberttownley/pyopenfec/"
+keywords = [
+  "fec",
+  "campaign",
+  "finance",
+  "openfec",
+]
+repository = "https://github.com/roberttownley/pyopenfec/"
+
+
 authors = [
-  "Jeremy Bowers",
+  "Robert Townley <me@roberttownley.com>",
+  "Jeremy Bowers <jeremyjbowers@gmail.com>",
   "Bob Lannon",
   "Kevin Schaul",
   "Janak Mayer",
   "Evan Sonderegger",
-  "Robert Townley <me@roberttownley.com>",
 ]
 
 [tool.poetry.dependencies]
