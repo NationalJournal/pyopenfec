@@ -5,11 +5,7 @@ import logging
 from datetime import datetime
 
 import requests
-import six
 from pytz import timezone
-
-if six.PY2:
-    from exceptions import Exception, NotImplementedError, TypeError
 
 
 API_KEY = os.environ.get("OPENFEC_API_KEY", None)
