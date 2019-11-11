@@ -1,6 +1,10 @@
+# Python
 *.pyc
 *.pyo
 .DS_Store
 build
 dist
 pyopenfec.egg-info
+
+# Development
+*.swp
