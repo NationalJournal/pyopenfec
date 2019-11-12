@@ -171,24 +171,18 @@ class Committee(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
 
     @utils.default_empty_list
     def total_receipts_by_state(self, **kwargs):
-        resource = "committee/{cid}/schedules/schedule_a/by_state".format(
-            cid=self.committee_id
-        )
-        return [a for a in AggregateScheduleAByState.fetch(resource=resource, **kwargs)]
+        kwargs["committee_id"] = self.committee_id
+        return [a for a in AggregateScheduleAByState.fetch(**kwargs)]
 
     @utils.default_empty_list
     def total_receipts_by_size(self, **kwargs):
-        resource = "committee/{cid}/schedules/schedule_a/by_size".format(
-            cid=self.committee_id
-        )
-        return [a for a in AggregateScheduleABySize.fetch(resource=resource, **kwargs)]
+        kwargs["committee_id"] = self.committee_id
+        return [a for a in AggregateScheduleABySize.fetch(**kwargs)]
 
     @utils.default_empty_list
     def total_receipts_by_zip(self, **kwargs):
-        resource = "committee/{cid}/schedules/schedule_a/by_zip".format(
-            cid=self.committee_id
-        )
-        return [a for a in AggregateScheduleAByZip.fetch(resource=resource, **kwargs)]
+        kwargs["committee_id"] = self.committee_id
+        return [a for a in AggregateScheduleAByZip.fetch(**kwargs)]
 
     @utils.default_empty_list
     def total_receipts_by_contributor(self, **kwargs):
@@ -229,7 +223,7 @@ class CommitteeHistoryPeriod(utils.PyOpenFecApiPaginatedClass):
 
     def __str__(self):
         return repr(
-            "{name} [{comm_id}] ({period})".format(
-                name=self.name, comm_id=self.committee_id, period=self.two_year_period
+            "{name} [{comm_id}] ({cycles})".format(
+                name=self.name, comm_id=self.committee_id, cycles=self.cycles
             )
         )
