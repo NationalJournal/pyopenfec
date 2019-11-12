@@ -3,7 +3,7 @@ A Python wrapper for the OpenFEC API. Documentation for this API can be found [h
 
 ## Installation
 ```
-pip install fec
+pip install pyopenfec
 ```
 
 ## Examples
