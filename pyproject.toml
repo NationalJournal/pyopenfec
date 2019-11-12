@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fec"
+name = "pyopenfec"
 version = "0.2.4"
 description = "OpenFEC API Client"
 
