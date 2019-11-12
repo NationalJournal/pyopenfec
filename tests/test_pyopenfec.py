@@ -6,7 +6,7 @@ from datetime import datetime
 class CandidateTest(unittest.TestCase):
     def setUp(self):
         self.candidate = None
-        candidates = Candidate.fetch(candidate_id='H8CA05035')
+        candidates = Candidate.fetch(candidate_id="H8CA05035")
         for candidate in candidates:
             self.candidate = candidate
 
@@ -27,7 +27,7 @@ class CandidateTest(unittest.TestCase):
 class CommitteeTest(unittest.TestCase):
     def setUp(self):
         self.committee = None
-        committees = Committee.fetch(designation='P', candidate_id='H8CA05035')
+        committees = Committee.fetch(designation="P", candidate_id="H8CA05035")
         for committee in committees:
             self.committee = committee
 
@@ -61,9 +61,8 @@ class CommitteeTest(unittest.TestCase):
     def test_schedule_a_dates(self):
         example = None
         donations = self.committee.select_receipts(
-            contributor_name='SANDBERG, SHERYL',
-            two_year_transaction_period=2018,
-            )
+            contributor_name="SANDBERG, SHERYL", two_year_transaction_period=2018
+        )
         for donation in donations:
             example = donation
         self.assertIsInstance(example.contribution_receipt_date, datetime)
@@ -72,14 +71,13 @@ class CommitteeTest(unittest.TestCase):
     def test_schedule_b_dates(self):
         example = None
         donations = self.committee.select_disbursements(
-            recipient_name='GOAT HILL PIZZA',
-            two_year_transaction_period=2018,
-            )
+            recipient_name="GOAT HILL PIZZA", two_year_transaction_period=2018
+        )
         for donation in donations:
             example = donation
         self.assertIsInstance(example.disbursement_date, datetime)
         self.assertIsInstance(example.load_date, datetime)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
