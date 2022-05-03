@@ -73,10 +73,9 @@ class PyOpenFecApiClass(object):
         response = None
         session = requests.Session()
         retry = Retry(
-            connect=100,
+            total=100,
             backoff_factor=0.5,
             status_forcelist=[429, 500, 502, 503],
-            status=100,
             respect_retry_after_header=False,
         )
         session.mount("https://", TimeoutHTTPAdapter(max_retries=retry))
