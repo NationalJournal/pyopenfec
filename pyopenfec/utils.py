@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from pytz import timezone
 
 
@@ -13,6 +15,21 @@ BASE_URL = "https://api.open.fec.gov"
 VERSION = "/v1"
 
 eastern = timezone("US/Eastern")
+
+
+class TimeoutHTTPAdapter(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.timeout = 5  # in seconds
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super().__init__(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        timeout = kwargs.get("timeout")
+        if timeout is None:
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
 
 
 class PyOpenFecException(Exception):
@@ -54,8 +71,21 @@ class PyOpenFecApiClass(object):
     @classmethod
     def _throttled_request(cls, url, params):
         response = None
+        session = requests.Session()
+        retry = Retry(
+            connect=100,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503],
+            status=100,
+            respect_retry_after_header=False,
+        )
+        session.mount("https://", TimeoutHTTPAdapter(max_retries=retry))
+
         if not cls.ratelimit_remaining == 0:
-            response = requests.get(url, params=params)
+            start = time.perf_counter()
+            response = session.get(url, params=params)
+            logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
+
             if "x-ratelimit-remaining" in response.headers:
                 cls.ratelimit_remaining = int(response.headers["x-ratelimit-remaining"])
             else:
@@ -63,12 +93,13 @@ class PyOpenFecApiClass(object):
 
         if cls.ratelimit_remaining == 0 or response.status_code == 429:
             while cls.ratelimit_remaining == 0 or response.status_code == 429:
-                cls.wait_time *= 1.5
-                logging.warn(
-                    "API rate limit exceeded. Waiting {}s.".format(cls.wait_time)
-                )
+                cls.wait_time += 0.5
+                logging.warning("API rate limit exceeded. Waiting {}s.".format(cls.wait_time))
                 time.sleep(cls.wait_time)
-                response = requests.get(url, params=params)
+                start = time.perf_counter()
+                response = session.get(url, params=params)
+                logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
+
                 if "x-ratelimit-remaining" in response.headers:
                     cls.ratelimit_remaining = int(
                         response.headers["x-ratelimit-remaining"]
