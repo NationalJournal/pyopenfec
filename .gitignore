@@ -8,3 +8,4 @@ pyopenfec.egg-info
 
 # Development
 *.swp
+.idea

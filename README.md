@@ -36,3 +36,15 @@ tktk
 
 ### Reports
 tktk
+
+## Development
+
+```shell
+poetry install
+```
+
+## Testing
+
+```shell
+OPENFEC_API_KEY=yourkey poetry run pytest
+```
