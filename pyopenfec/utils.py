@@ -16,6 +16,7 @@ VERSION = "/v1"
 
 eastern = timezone("US/Eastern")
 
+date_formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S+00:00", "%Y-%m-%dT%H:%M:%S.%f+00:00"]
 
 class TimeoutHTTPAdapter(HTTPAdapter):
     def __init__(self, *args, **kwargs):
@@ -243,10 +244,32 @@ def default_empty_list(func):
     return inner
 
 
-def set_instance_attr(instance, k, v, date_fields):
-    if k in date_fields and v is not None:
-        parsed_date = datetime.strptime(v, date_fields[k])
-        tz_aware = eastern.localize(parsed_date)
-        setattr(instance, k, tz_aware)
-        return
-    setattr(instance, k, v)
+def set_instance_attr(instance, attribute_name, value, date_fields, timezone=None):
+    """
+    Set an attribute on an instance with special handling for date fields.
+
+    Args:
+        instance: The instance on which to set the attribute.
+        attribute_name: The name of the attribute to set.
+        value: The value to set for the attribute.
+        date_fields: List of attribute names that represent date fields.
+        timezone: The timezone to use for creating a timezone-aware datetime object.
+                  If None, UTC timezone will be used.
+
+    Returns:
+        None
+    """
+    if attribute_name in date_fields and value is not None:
+        parsed_date = None
+        # Try parsing the date string with different formats
+        for format_str in date_formats:
+            try:
+                parsed_date = datetime.strptime(value, format_str)
+                # Convert the parsed date to a timezone-aware datetime
+                tz_aware = eastern.localize(parsed_date)
+                setattr(instance, attribute_name, tz_aware)
+                return
+            except ValueError:
+                pass
+
+    setattr(instance, attribute_name, value)
