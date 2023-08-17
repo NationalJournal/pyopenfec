@@ -90,8 +90,8 @@ class CommitteeTotals(utils.PyOpenFecApiPaginatedClass):
         self.transfers_to_other_authorized_committee = None
 
         date_fields = {
-            "coverage_start_date": "%Y-%m-%dT%H:%M:%S+00:00",
-            "coverage_end_date": "%Y-%m-%dT%H:%M:%S+00:00",
+            "coverage_start_date": "%Y-%m-%dT%H:%M:%S",
+            "coverage_end_date": "%Y-%m-%dT%H:%M:%S",
         }
 
         for k, v in kwargs.items():

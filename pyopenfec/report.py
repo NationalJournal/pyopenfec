@@ -187,8 +187,8 @@ class Report(utils.PyOpenFecApiPaginatedClass):
         self.transfers_to_other_authorized_committee_ytd = None
 
         date_fields = {
-            "coverage_end_date": "%Y-%m-%dT%H:%M:%S+00:00",
-            "coverage_start_date": "%Y-%m-%dT%H:%M:%S+00:00",
+            "coverage_end_date": "%Y-%m-%dT%H:%M:%S",
+            "coverage_start_date": "%Y-%m-%dT%H:%M:%S",
             "receipt_date": "%Y-%m-%dT%H:%M:%S",
         }
 
