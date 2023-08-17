@@ -244,7 +244,7 @@ def default_empty_list(func):
     return inner
 
 
-def set_instance_attr(instance, attribute_name, value, date_fields, timezone=None):
+def set_instance_attr(instance, attribute_name, value, date_fields):
     """
     Set an attribute on an instance with special handling for date fields.
 
@@ -253,8 +253,6 @@ def set_instance_attr(instance, attribute_name, value, date_fields, timezone=Non
         attribute_name: The name of the attribute to set.
         value: The value to set for the attribute.
         date_fields: List of attribute names that represent date fields.
-        timezone: The timezone to use for creating a timezone-aware datetime object.
-                  If None, UTC timezone will be used.
 
     Returns:
         None
