@@ -189,7 +189,7 @@ class Report(utils.PyOpenFecApiPaginatedClass):
         date_fields = {
             "coverage_end_date": "%Y-%m-%dT%H:%M:%S",
             "coverage_start_date": "%Y-%m-%dT%H:%M:%S",
-            "receipt_date": "%Y-%m-%dT%H:%M:%S",
+            "receipt_date": "%Y-%m-%d",
         }
 
         for k, v in kwargs.items():
