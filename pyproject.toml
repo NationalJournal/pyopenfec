@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyopenfec"
-version = "0.2.7"
+version = "0.2.8"
 description = "OpenFEC API Client"
 
 license = "MIT"
@@ -32,7 +32,7 @@ maintainers = [
 [tool.poetry.dependencies]
 python = "^3.5"
 requests = "^2.22"
-pytz = "^2019.3"
+pytz = "^2024.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
