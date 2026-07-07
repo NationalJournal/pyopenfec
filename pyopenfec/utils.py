@@ -7,6 +7,7 @@ from datetime import datetime
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.exceptions import MaxRetryError, ResponseError
 from pytz import timezone
 
 
@@ -14,13 +15,21 @@ API_KEY = os.environ.get("OPENFEC_API_KEY", None)
 BASE_URL = "https://api.open.fec.gov"
 VERSION = "/v1"
 
+#: When the remaining hourly request budget drops to or below this, log a
+#: heads-up so approaching the limit is visible *before* we start getting 429'd.
+LOW_RATELIMIT_REMAINING = 25
+
 eastern = timezone("US/Eastern")
 
 date_formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S+00:00", "%Y-%m-%dT%H:%M:%S.%f+00:00"]
 
 class TimeoutHTTPAdapter(HTTPAdapter):
+    # (connect timeout, read timeout) in seconds. FEC finance endpoints can be
+    # slow to respond, so the read timeout is generous while connect stays short.
+    # A too-short timeout was the old default (5s), which made heavier endpoints
+    # read-timeout and trigger retry storms.
     def __init__(self, *args, **kwargs):
-        self.timeout = 5  # in seconds
+        self.timeout = (10, 30)
         if "timeout" in kwargs:
             self.timeout = kwargs["timeout"]
             del kwargs["timeout"]
@@ -31,6 +40,87 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         if timeout is None:
             kwargs["timeout"] = self.timeout
         return super().send(request, **kwargs)
+
+
+class BoundedRetry(Retry):
+    """urllib3 Retry that uses the size of a 429's ``Retry-After`` to tell a
+    transient throttle apart from hourly-quota exhaustion.
+
+    FEC (via api.data.gov / api-umbrella) sends an accurate ``Retry-After`` on a
+    429. A short wait means a burst/per-minute throttle -- worth riding out. A
+    long wait means the rolling hourly quota is spent and won't reopen within any
+    reasonable budget, so retrying just hammers an endpoint that will keep
+    rejecting us. In that case we fail fast; the consuming job checkpoints its
+    progress and resumes on the next run.
+    """
+
+    #: The boundary, in seconds, between the two cases above. A ``Retry-After``
+    #: at or below this is treated as a transient throttle we ride out (and honor
+    #: as our per-retry sleep cap); anything above it is treated as hourly-quota
+    #: exhaustion and we fail fast instead of retrying.
+    max_retry_after = 60
+
+    def get_retry_after(self, response):
+        retry_after = super().get_retry_after(response)
+        if retry_after is None:
+            return None
+        return min(retry_after, self.max_retry_after)
+
+    def increment(self, method=None, url=None, response=None, error=None, _pool=None, _stacktrace=None):
+        if response is not None and getattr(response, "status", None) == 429:
+            headers = getattr(response, "headers", None) or {}
+            retry_after = super().get_retry_after(response)
+            limit = headers.get("x-ratelimit-limit")
+            remaining = headers.get("x-ratelimit-remaining")
+
+            if retry_after is not None and retry_after > self.max_retry_after:
+                # Hourly quota exhausted -- the window won't reopen within our
+                # budget, so stop rather than hammer an endpoint that will keep
+                # rejecting us. This is the actionable "quota too low" signal.
+                logging.warning(
+                    "FEC hourly API quota exhausted (HTTP 429): limit=%s/hour, "
+                    "remaining=%s, server asked to wait %ss (> %ss budget). "
+                    "Failing fast (the job resumes next run). Recurring hits mean "
+                    "the quota is too low -- consider requesting a higher OpenFEC quota.",
+                    limit, remaining, retry_after, self.max_retry_after,
+                )
+                raise MaxRetryError(_pool, url, ResponseError("FEC hourly quota exhausted"))
+
+            # Short/transient throttle (e.g. a per-minute burst limit). urllib3
+            # honors Retry-After and retries; keep this at DEBUG so a run that
+            # recovers on its own -- the logic doing its job -- stays quiet.
+            logging.debug(
+                "FEC throttled request (HTTP 429): retry-after=%ss, remaining=%s; retrying.",
+                retry_after, remaining,
+            )
+        return super().increment(
+            method, url, response=response, error=error, _pool=_pool, _stacktrace=_stacktrace
+        )
+
+
+def _log_ratelimit_usage(response):
+    """Record FEC rate-limit budget from a response's headers.
+
+    DEBUG on every response (enable it for a run to observe real usage and
+    confirm the actual hourly limit), plus a WARNING once we're down to the last
+    ``LOW_RATELIMIT_REMAINING`` requests so we see the limit approaching before a
+    429 rather than after.
+    """
+    headers = getattr(response, "headers", None) or {}
+    remaining = headers.get("x-ratelimit-remaining")
+    limit = headers.get("x-ratelimit-limit")
+    if remaining is None:
+        return
+    logging.debug("FEC rate limit: %s of %s requests remaining this hour.", remaining, limit)
+    try:
+        remaining = int(remaining)
+    except (TypeError, ValueError):
+        return
+    if remaining <= LOW_RATELIMIT_REMAINING:
+        logging.warning(
+            "Approaching FEC hourly rate limit: only %s of %s requests remaining this hour.",
+            remaining, limit,
+        )
 
 
 class PyOpenFecException(Exception):
@@ -53,9 +143,6 @@ class PyOpenFecApiClass(object):
     Universal class for PyOpenFec API classes to inherit from.
     """
 
-    ratelimit_remaining = 1000
-    wait_time = 0.5
-
     def to_dict(self):
         return self.__dict__
 
@@ -71,45 +158,31 @@ class PyOpenFecApiClass(object):
 
     @classmethod
     def _throttled_request(cls, url, params):
-        response = None
+        # Retries (including 429 rate-limit handling and Retry-After waits) are
+        # owned entirely by urllib3's Retry -- no separate manual back-off loop.
+        # A low total plus a bounded Retry-After keeps a slow or throttled FEC
+        # from spinning long enough to trip the consumer's overall timeout.
         session = requests.Session()
-        retry = Retry(
-            total=100,
+        retry = BoundedRetry(
+            total=3,
             backoff_factor=0.5,
             status_forcelist=[429, 500, 502, 503],
-            respect_retry_after_header=False,
+            respect_retry_after_header=True,
         )
         session.mount("https://", TimeoutHTTPAdapter(max_retries=retry))
 
-        if not cls.ratelimit_remaining == 0:
-            start = time.perf_counter()
+        start = time.perf_counter()
+        try:
             response = session.get(url, params=params)
-            logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
-
-            if "x-ratelimit-remaining" in response.headers:
-                cls.ratelimit_remaining = int(response.headers["x-ratelimit-remaining"])
-            else:
-                cls.ratelimit_remaining = 1000
-
-        if cls.ratelimit_remaining == 0 or response.status_code == 429:
-            while cls.ratelimit_remaining == 0 or response.status_code == 429:
-                cls.wait_time += 0.5
-                logging.warning("API rate limit exceeded. Waiting {}s.".format(cls.wait_time))
-                time.sleep(cls.wait_time)
-                start = time.perf_counter()
-                response = session.get(url, params=params)
-                logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
-
-                if "x-ratelimit-remaining" in response.headers:
-                    cls.ratelimit_remaining = int(
-                        response.headers["x-ratelimit-remaining"]
-                    )
-                elif response.status_code == 200:
-                    cls.ratelimit_remaining = 120
-                else:
-                    cls.ratelimit_remaining = 0
-
-        cls.wait_time = 0.5
+        except requests.exceptions.RequestException as exc:
+            # Retries exhausted (rate limit / server errors / timeouts) or the
+            # request otherwise failed. Fail fast with the library's own
+            # exception type instead of spinning.
+            raise PyOpenFecException(
+                "Request to OpenFEC failed after retries: {}".format(exc)
+            )
+        logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
+        _log_ratelimit_usage(response)
         return response
 
     @classmethod
