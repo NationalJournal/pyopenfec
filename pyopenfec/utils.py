@@ -58,7 +58,7 @@ class BoundedRetry(Retry):
     #: at or below this is treated as a transient throttle we ride out (and honor
     #: as our per-retry sleep cap); anything above it is treated as hourly-quota
     #: exhaustion and we fail fast instead of retrying.
-    max_retry_after = 60
+    max_retry_after = 70
 
     def get_retry_after(self, response):
         retry_after = super().get_retry_after(response)
