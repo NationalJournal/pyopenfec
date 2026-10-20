@@ -210,9 +210,15 @@ class PyOpenFecApiClass(object):
         except requests.exceptions.RequestException as exc:
             # Retries exhausted (rate limit / server errors / timeouts) or the
             # request otherwise failed. Fail fast with the library's own
-            # exception type instead of spinning.
+            # exception type instead of spinning. requests quotes the full
+            # query string in its message, so scrub the key before it can
+            # reach a caller's logs.
+            message = str(exc)
+            api_key = params.get("api_key")
+            if api_key:
+                message = message.replace(api_key, "<api_key>")
             raise PyOpenFecException(
-                "Request to OpenFEC failed after retries: {}".format(exc)
+                "Request to OpenFEC failed after retries: {}".format(message)
             )
         logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
         _log_ratelimit_usage(response)

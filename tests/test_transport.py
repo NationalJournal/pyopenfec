@@ -144,6 +144,15 @@ class ApiKeyTestCase(TransportTestCase):
         self.assertEqual(transport.query(0)["api_key"], "first-key")
         self.assertEqual(transport.query(1)["api_key"], "second-key")
 
+    def test_key_is_scrubbed_from_transport_error_messages(self):
+        # requests quotes the request URL, query string included, in RetryError.
+        patch_env(self, OPENFEC_API_KEY="hunter2-secret")
+        with FakeTransport(json_response(500, {"message": "Internal Server Error"}), repeat_last=True):
+            with self.assertRaises(PyOpenFecException) as raised:
+                self.fetch()
+        self.assertIn("api.open.fec.gov", str(raised.exception))
+        self.assertNotIn("hunter2-secret", str(raised.exception))
+
     def test_key_is_never_logged(self):
         patch_env(self, OPENFEC_API_KEY="hunter2-secret")
         with FakeTransport(json_response(200, page([row()]))):
