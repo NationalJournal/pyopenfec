@@ -37,6 +37,18 @@ tktk
 ### Reports
 tktk
 
+### E-filed reports
+`EfileReport` wraps `/efile/reports/house-senate/`, the raw e-filings that appear within minutes of being filed. `Committee.select_efile_reports()` pages through every result for a committee and accepts the endpoint's query parameters.
+```
+from pyopenfec import Committee
+committee = Committee(committee_id="C00000001")
+for report in committee.select_efile_reports(min_receipt_date="2026-06-30", max_receipt_date="2026-10-16", sort="-receipt_date"):
+    print(report.report_type, report.coverage_end_date, report.total_receipts_period)
+```
+`coverage_start_date`, `coverage_end_date` and `receipt_date` are timezone-aware `US/Eastern` datetimes, as on `Report`. A field missing from a result reads as `None`.
+
+Requests are paced to one every 0.5 s process-wide (`pyopenfec.utils.MIN_REQUEST_INTERVAL`) and `OPENFEC_API_KEY` is read from the environment on each request. Every failure, including exhausted retries, is raised as `pyopenfec.utils.PyOpenFecException`.
+
 ## Development
 
 ```shell
