@@ -1,6 +1,7 @@
 from . import utils
 from .filing import Filing
 from .report import Report
+from .efile_report import EfileReport
 from .aggregates import (
     CommitteeTotals,
     AggregateScheduleAByZip,
@@ -128,6 +129,12 @@ class Committee(utils.PyOpenFecApiPaginatedClass, utils.SearchMixin):
             for r in Report.fetch(
                 resource=resource_path, committee_id=self.committee_id
             )
+        ]
+
+    @utils.default_empty_list
+    def select_efile_reports(self, **kwargs):
+        return [
+            r for r in EfileReport.fetch(committee_id=self.committee_id, **kwargs)
         ]
 
     @utils.default_empty_list

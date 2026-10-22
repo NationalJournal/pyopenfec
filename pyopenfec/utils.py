@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 import time
 import logging
 from datetime import datetime
@@ -11,9 +12,16 @@ from requests.packages.urllib3.exceptions import MaxRetryError, ResponseError
 from pytz import timezone
 
 
-API_KEY = os.environ.get("OPENFEC_API_KEY", None)
 BASE_URL = "https://api.open.fec.gov"
 VERSION = "/v1"
+
+#: Minimum seconds between the start of one request and the start of the
+#: next, shared by every resource in the process. OpenFEC's upgraded keys
+#: allow 7,200 requests/hour, i.e. one every 0.5 s; pacing to that floor keeps
+#: a sustained run from ever being throttled. Set it to 0 in tests.
+MIN_REQUEST_INTERVAL = 0.5
+_pace_lock = threading.Lock()
+_last_request_at = None
 
 #: When the remaining hourly request budget drops to or below this, log a
 #: heads-up so approaching the limit is visible *before* we start getting 429'd.
@@ -22,6 +30,7 @@ LOW_RATELIMIT_REMAINING = 25
 eastern = timezone("US/Eastern")
 
 date_formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S+00:00", "%Y-%m-%dT%H:%M:%S.%f+00:00"]
+
 
 class TimeoutHTTPAdapter(HTTPAdapter):
     # (connect timeout, read timeout) in seconds. FEC finance endpoints can be
@@ -123,6 +132,29 @@ def _log_ratelimit_usage(response):
         )
 
 
+def get_api_key():
+    """The OpenFEC API key, read from ``OPENFEC_API_KEY`` at call time.
+
+    Reading it per request (rather than once at import) means a ``.env`` file
+    loaded after ``import pyopenfec``, or a key set by a test, is honoured.
+    """
+    return os.environ.get("OPENFEC_API_KEY", None)
+
+
+def _pace_request():
+    """Block until at least ``MIN_REQUEST_INTERVAL`` has passed since the last request started."""
+    global _last_request_at
+    with _pace_lock:
+        now = time.monotonic()
+        if _last_request_at is not None:
+            wait = MIN_REQUEST_INTERVAL - (now - _last_request_at)
+            if wait > 0:
+                logging.debug("Pacing OpenFEC requests: sleeping %.2fs.", wait)
+                time.sleep(wait)
+                now = time.monotonic()
+        _last_request_at = now
+
+
 class PyOpenFecException(Exception):
     """
     An exception from the PyOpenFec API.
@@ -171,15 +203,22 @@ class PyOpenFecApiClass(object):
         )
         session.mount("https://", TimeoutHTTPAdapter(max_retries=retry))
 
+        _pace_request()
         start = time.perf_counter()
         try:
             response = session.get(url, params=params)
         except requests.exceptions.RequestException as exc:
             # Retries exhausted (rate limit / server errors / timeouts) or the
             # request otherwise failed. Fail fast with the library's own
-            # exception type instead of spinning.
+            # exception type instead of spinning. requests quotes the full
+            # query string in its message, so scrub the key before it can
+            # reach a caller's logs.
+            message = str(exc)
+            api_key = params.get("api_key")
+            if api_key:
+                message = message.replace(api_key, "<api_key>")
             raise PyOpenFecException(
-                "Request to OpenFEC failed after retries: {}".format(exc)
+                "Request to OpenFEC failed after retries: {}".format(message)
             )
         logging.debug("Request completed in {} secs.".format(round(time.perf_counter() - start, 2)))
         _log_ratelimit_usage(response)
@@ -207,16 +246,18 @@ class PyOpenFecApiClass(object):
     def _make_request(cls, resource, **kwargs):
         url = BASE_URL + VERSION + "/%s/" % resource
 
-        if not API_KEY:
+        api_key = get_api_key()
+        if not api_key:
             raise PyOpenFecException(
                 "Please export an env var OPENFEC_API_KEY with your API key."
             )
 
         params = dict(kwargs)
-        params["api_key"] = API_KEY
+        params["api_key"] = api_key
 
+        # Log what was asked for, never the key.
+        logging.debug("GET %s %s", url, dict((k, v) for k, v in kwargs.items()))
         r = cls._throttled_request(url, params)
-        logging.debug(r.url)
 
         if r.status_code != 200:
             raise PyOpenFecException(
@@ -224,7 +265,12 @@ class PyOpenFecApiClass(object):
                 % r.status_code
             )
 
-        return r.json()
+        try:
+            return r.json()
+        except ValueError as exc:
+            raise PyOpenFecException(
+                "OpenFEC returned a 200 whose body is not JSON: {}".format(exc)
+            )
 
 
 class PyOpenFecApiPaginatedClass(PyOpenFecApiClass):
